@@ -1,0 +1,19 @@
+#!ipxe
+
+goto deploy
+
+:deploy
+imgfree
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ pxe_options.ipxe_timeout }} {% endif %}{{ pxe_options.deployment_aki_path }} selinux=0 troubleshoot=0 text {{ pxe_options.pxe_append_params|default("", true) }} ip=${ip}:${next-server}:${gateway}:${netmask} BOOTIF=${mac} ipa-api-url={{ pxe_options['ipa-api-url'] }} initrd=deploy_ramdisk coreos.configdrive=0 || goto deploy
+
+initrd {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ pxe_options.ipxe_timeout }} {% endif %}{{ pxe_options.deployment_ari_path }} || goto deploy
+boot
+
+:boot_partition
+imgfree
+kernel {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ pxe_options.ipxe_timeout }} {% endif %}{{ pxe_options.aki_path }} root={{ ROOT }} ro text {{ pxe_options.pxe_append_params|default("", true) }} initrd=ramdisk || goto boot_partition
+initrd {% if pxe_options.ipxe_timeout > 0 %}--timeout {{ pxe_options.ipxe_timeout }} {% endif %}{{ pxe_options.ari_path }} || goto boot_partition
+boot
+
+:boot_whole_disk
+sanboot --no-describe
