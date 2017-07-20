@@ -95,11 +95,13 @@ MINOR_28_VIFS_SUBCONTROLLER = 28
 MINOR_29_INJECT_NMI = 29
 MINOR_30_DYNAMIC_DRIVERS = 30
 MINOR_31_DYNAMIC_INTERFACES = 31
+MINOR_32_VOLUME = 32
 
 # When adding another version, update MINOR_MAX_VERSION and also update
 # doc/source/dev/webapi-version-history.rst with a detailed explanation of
 # what the version has changed.
-MINOR_MAX_VERSION = MINOR_31_DYNAMIC_INTERFACES
+#MINOR_MAX_VERSION = MINOR_31_DYNAMIC_INTERFACES
+MINOR_MAX_VERSION = MINOR_32_VOLUME
 
 # String representations of the minor and maximum versions
 MIN_VERSION_STRING = '{}.{}'.format(BASE_VERSION, MINOR_1_INITIAL_VERSION)

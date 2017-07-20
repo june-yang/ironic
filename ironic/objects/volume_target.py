@@ -20,6 +20,7 @@ from ironic.common import exception
 from ironic.db import api as db_api
 from ironic.objects import base
 from ironic.objects import fields as object_fields
+from ironic.objects import notification
 
 
 @base.IronicObjectRegistry.register
@@ -72,13 +73,14 @@ class VolumeTarget(base.IronicObject,
     def get_by_id(cls, context, db_id):
         """Find a volume target based on its database ID.
 
+        :param cls: the :class:`VolumeTarget`
         :param context: security context
         :param db_id: the database primary key (integer) ID of a volume target
         :returns: a :class:`VolumeTarget` object
         :raises: VolumeTargetNotFound if no volume target with this ID exists
         """
         db_target = cls.dbapi.get_volume_target_by_id(db_id)
-        target = cls._from_db_object(cls(context), db_target)
+        target = cls._from_db_object(context, cls(), db_target)
         return target
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
@@ -89,13 +91,14 @@ class VolumeTarget(base.IronicObject,
     def get_by_uuid(cls, context, uuid):
         """Find a volume target based on its UUID.
 
+        :param cls: the :class:`VolumeTarget`
         :param context: security context
         :param uuid: the UUID of a volume target
         :returns: a :class:`VolumeTarget` object
         :raises: VolumeTargetNotFound if no volume target with this UUID exists
         """
         db_target = cls.dbapi.get_volume_target_by_uuid(uuid)
-        target = cls._from_db_object(cls(context), db_target)
+        target = cls._from_db_object(context, cls(), db_target)
         return target
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
@@ -150,6 +153,33 @@ class VolumeTarget(base.IronicObject,
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
     # methods can be used in the future to replace current explicit RPC calls.
     # Implications of calling new remote procedures should be thought through.
+    # @object_base.remotable_classmethod
+    @classmethod
+    def list_by_volume_id(cls, context, volume_id, limit=None, marker=None,
+                          sort_key=None, sort_dir=None):
+        """Return a list of VolumeTarget objects related to a given volume ID.
+
+        :param context: security context
+        :param volume_id: the UUID of the volume
+        :param limit: maximum number of volume targets to return in a
+                      single result
+        :param marker: pagination marker for large data sets
+        :param sort_key: column to sort results by
+        :param sort_dir: direction to sort. "asc" or "desc".
+        :returns: a list of :class:`VolumeTarget` objects
+        :raises: InvalidParameterValue if sort_key does not exist
+        """
+        db_targets = cls.dbapi.get_volume_targets_by_volume_id(
+            volume_id,
+            limit=limit,
+            marker=marker,
+            sort_key=sort_key,
+            sort_dir=sort_dir)
+        return cls._from_db_object_list(context, db_targets)
+
+    # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
+    # methods can be used in the future to replace current explicit RPC calls.
+    # Implications of calling new remote procedures should be thought through.
     # @object_base.remotable
     def create(self, context=None):
         """Create a VolumeTarget record in the DB.
@@ -165,9 +195,9 @@ class VolumeTarget(base.IronicObject,
         :raises: VolumeTargetAlreadyExists if a volume target with the same
                  UUID exists
         """
-        values = self.obj_get_changes()
+        values = self.do_version_changes_for_db()
         db_target = self.dbapi.create_volume_target(values)
-        self._from_db_object(self, db_target)
+        self._from_db_object(self._context, self, db_target)
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
     # methods can be used in the future to replace current explicit RPC calls.
@@ -195,7 +225,7 @@ class VolumeTarget(base.IronicObject,
         """Save updates to this VolumeTarget.
 
         Updates will be made column by column based on the result
-        of self.obj_get_changes().
+        of self.do_version_changes_for_db().
 
         :param context: security context. NOTE: This should only
                         be used internally by the indirection_api.
@@ -208,9 +238,9 @@ class VolumeTarget(base.IronicObject,
                  exists with the same node ID and boot index values
         :raises: VolumeTargetNotFound if the volume target cannot be found
         """
-        updates = self.obj_get_changes()
+        updates = self.do_version_changes_for_db()
         updated_target = self.dbapi.update_volume_target(self.uuid, updates)
-        self._from_db_object(self, updated_target)
+        self._from_db_object(self._context, self, updated_target)
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
     # methods can be used in the future to replace current explicit RPC calls.
@@ -234,3 +264,47 @@ class VolumeTarget(base.IronicObject,
         current = self.get_by_uuid(self._context, uuid=self.uuid)
         self.obj_refresh(current)
         self.obj_reset_changes()
+
+
+@base.IronicObjectRegistry.register
+class VolumeTargetCRUDNotification(notification.NotificationBase):
+    """Notification emitted at CRUD of a volume target."""
+    # Version 1.0: Initial version
+    VERSION = '1.0'
+
+    fields = {
+        'payload': object_fields.ObjectField('VolumeTargetCRUDPayload')
+    }
+
+
+@base.IronicObjectRegistry.register
+class VolumeTargetCRUDPayload(notification.NotificationPayloadBase):
+    # Version 1.0: Initial Version
+    VERSION = '1.0'
+
+    SCHEMA = {
+        'boot_index': ('target', 'boot_index'),
+        'extra': ('target', 'extra'),
+        'properties': ('target', 'properties'),
+        'volume_id': ('target', 'volume_id'),
+        'volume_type': ('target', 'volume_type'),
+        'created_at': ('target', 'created_at'),
+        'updated_at': ('target', 'updated_at'),
+        'uuid': ('target', 'uuid'),
+    }
+
+    fields = {
+        'boot_index': object_fields.IntegerField(nullable=True),
+        'extra': object_fields.FlexibleDictField(nullable=True),
+        'node_uuid': object_fields.UUIDField(),
+        'properties': object_fields.FlexibleDictField(nullable=True),
+        'volume_id': object_fields.StringField(nullable=True),
+        'volume_type': object_fields.StringField(nullable=True),
+        'created_at': object_fields.DateTimeField(nullable=True),
+        'updated_at': object_fields.DateTimeField(nullable=True),
+        'uuid': object_fields.UUIDField(),
+    }
+
+    def __init__(self, target, node_uuid):
+        super(VolumeTargetCRUDPayload, self).__init__(node_uuid=node_uuid)
+        self.populate_schema(target=target)

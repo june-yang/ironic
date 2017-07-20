@@ -20,6 +20,7 @@ from ironic.common import exception
 from ironic.db import api as db_api
 from ironic.objects import base
 from ironic.objects import fields as object_fields
+from ironic.objects import notification
 
 
 @base.IronicObjectRegistry.register
@@ -70,6 +71,7 @@ class VolumeConnector(base.IronicObject,
     def get_by_id(cls, context, db_id):
         """Find a volume connector based on its integer ID.
 
+        :param cls: the :class:`VolumeConnector`
         :param context: Security context.
         :param db_id: The integer (database primary key) ID of a
                       volume connector.
@@ -78,7 +80,7 @@ class VolumeConnector(base.IronicObject,
                  the specified ID.
         """
         db_connector = cls.dbapi.get_volume_connector_by_id(db_id)
-        connector = cls._from_db_object(cls(context), db_connector)
+        connector = cls._from_db_object(context, cls(), db_connector)
         return connector
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
@@ -89,6 +91,7 @@ class VolumeConnector(base.IronicObject,
     def get_by_uuid(cls, context, uuid):
         """Find a volume connector based on its UUID.
 
+        :param cls: the :class:`VolumeConnector`
         :param context: security context
         :param uuid: the UUID of a volume connector
         :returns: a :class:`VolumeConnector` object
@@ -96,7 +99,7 @@ class VolumeConnector(base.IronicObject,
                  the specified UUID
         """
         db_connector = cls.dbapi.get_volume_connector_by_uuid(uuid)
-        connector = cls._from_db_object(cls(context), db_connector)
+        connector = cls._from_db_object(context, cls(), db_connector)
         return connector
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
@@ -166,9 +169,9 @@ class VolumeConnector(base.IronicObject,
         :raises: VolumeConnectorAlreadyExists if a volume connector with the
                  same UUID already exists
         """
-        values = self.obj_get_changes()
+        values = self.do_version_changes_for_db()
         db_connector = self.dbapi.create_volume_connector(values)
-        self._from_db_object(self, db_connector)
+        self._from_db_object(self._context, self, db_connector)
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
     # methods can be used in the future to replace current explicit RPC calls.
@@ -197,7 +200,7 @@ class VolumeConnector(base.IronicObject,
         """Save updates to this VolumeConnector.
 
         Updates will be made column by column based on the result
-        of self.obj_get_changes().
+        of self.do_version_changes_for_db().
 
         :param context: security context. NOTE: This should only
                         be used internally by the indirection_api.
@@ -212,10 +215,10 @@ class VolumeConnector(base.IronicObject,
                  fields
         :raises: InvalidParameterValue when the UUID is being changed
         """
-        updates = self.obj_get_changes()
+        updates = self.do_version_changes_for_db()
         updated_connector = self.dbapi.update_volume_connector(self.uuid,
                                                                updates)
-        self._from_db_object(self, updated_connector)
+        self._from_db_object(self._context, self, updated_connector)
 
     # NOTE(xek): We don't want to enable RPC on this call just yet. Remotable
     # methods can be used in the future to replace current explicit RPC calls.
@@ -238,3 +241,44 @@ class VolumeConnector(base.IronicObject,
         current = self.get_by_uuid(self._context, uuid=self.uuid)
         self.obj_refresh(current)
         self.obj_reset_changes()
+
+
+@base.IronicObjectRegistry.register
+class VolumeConnectorCRUDNotification(notification.NotificationBase):
+    """Notification emitted at CRUD of a volume connector."""
+    # Version 1.0: Initial version
+    VERSION = '1.0'
+
+    fields = {
+        'payload': object_fields.ObjectField('VolumeConnectorCRUDPayload')
+    }
+
+
+@base.IronicObjectRegistry.register
+class VolumeConnectorCRUDPayload(notification.NotificationPayloadBase):
+    """Payload schema for CRUD of a volume connector."""
+    # Version 1.0: Initial version
+    VERSION = '1.0'
+
+    SCHEMA = {
+        'extra': ('connector', 'extra'),
+        'type': ('connector', 'type'),
+        'connector_id': ('connector', 'connector_id'),
+        'created_at': ('connector', 'created_at'),
+        'updated_at': ('connector', 'updated_at'),
+        'uuid': ('connector', 'uuid'),
+    }
+
+    fields = {
+        'extra': object_fields.FlexibleDictField(nullable=True),
+        'type': object_fields.StringField(nullable=True),
+        'connector_id': object_fields.StringField(nullable=True),
+        'node_uuid': object_fields.UUIDField(),
+        'created_at': object_fields.DateTimeField(nullable=True),
+        'updated_at': object_fields.DateTimeField(nullable=True),
+        'uuid': object_fields.UUIDField(),
+    }
+
+    def __init__(self, connector, node_uuid):
+        super(VolumeConnectorCRUDPayload, self).__init__(node_uuid=node_uuid)
+        self.populate_schema(connector=connector)

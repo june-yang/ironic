@@ -33,6 +33,8 @@ from ironic.api.controllers.v1 import portgroup
 from ironic.api.controllers.v1 import ramdisk
 from ironic.api.controllers.v1 import utils
 from ironic.api.controllers.v1 import versions
+from ironic.api.controllers.v1 import volume
+from ironic.api.controllers.v1 import book
 from ironic.api import expose
 from ironic.common.i18n import _
 
@@ -83,6 +85,9 @@ class V1(base.APIBase):
 
     drivers = [link.Link]
     """Links to the drivers resource"""
+
+    volume = [link.Link]
+    """Links to the volume resource"""
 
     lookup = [link.Link]
     """Links to the lookup resource"""
@@ -139,6 +144,23 @@ class V1(base.APIBase):
                                           'drivers', '',
                                           bookmark=True)
                       ]
+        if utils.allow_volume():
+            v1.volume = [
+                link.Link.make_link('self',
+                                    pecan.request.public_url,
+                                    'volume', ''),
+                link.Link.make_link('bookmark',
+                                    pecan.request.public_url,
+                                    'volume', '',
+                                    bookmark=True)
+            ]
+        v1.books = [link.Link.make_link('self', pecan.request.public_url,
+                                        'books', ''),
+                    link.Link.make_link('bookmark',
+                                        pecan.request.public_url,
+                                        'books', '',
+                                        bookmark=True)
+                    ]
         if utils.allow_ramdisk_endpoints():
             v1.lookup = [link.Link.make_link('self', pecan.request.public_url,
                                              'lookup', ''),
@@ -166,6 +188,8 @@ class Controller(rest.RestController):
     portgroups = portgroup.PortgroupsController()
     chassis = chassis.ChassisController()
     drivers = driver.DriversController()
+    volume = volume.VolumeController()
+    books = book.BooksController()
     lookup = ramdisk.LookupController()
     heartbeat = ramdisk.HeartbeatController()
 
