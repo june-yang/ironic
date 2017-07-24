@@ -84,6 +84,17 @@ opts = [
                       'forever or until manually deleted. Used when the '
                       'deploy_logs_storage_backend is configured to '
                       '"swift".')),
+    cfg.StrOpt('default_listen_port',
+               default='9999',
+               help=_('Agent default listening port')),
+    cfg.IntOpt('retry_interval',
+               default=30,
+               help=_('Retry interval in seconds in the case of a failed '
+                      'action (only specific actions are retried).')),
+    cfg.IntOpt('retry_max',
+               default=30,
+               help=_('Retry interval in seconds in the case of a failed '
+                      'action (only specific actions are retried).'))
 ]
 
 

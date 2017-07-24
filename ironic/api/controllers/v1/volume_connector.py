@@ -34,10 +34,13 @@ from ironic.common import exception
 from ironic.common.i18n import _
 from ironic.common import policy
 from ironic import objects
+import ironic.conf
 
 METRICS = metrics_utils.get_metrics_logger(__name__)
 
 _DEFAULT_RETURN_FIELDS = ('uuid', 'node_uuid', 'type', 'connector_id')
+
+CONF = ironic.conf.CONF
 
 
 class VolumeConnector(base.APIBase):
@@ -281,6 +284,13 @@ class VolumeConnectorsController(rest.RestController):
         if fields and detail:
             raise exception.InvalidParameterValue(
                 _("Can't fetch a subset of fields with 'detail' set"))
+
+        # cache node volume connection info
+        if node and CONF.api.enable_data_volume_manage:
+            rpc_node = api_utils.get_rpc_node(node)
+            topic = pecan.request.rpcapi.get_topic_for(rpc_node)
+            return pecan.request.rpcapi.do_node_data_volume_connection(rpc_node.uuid,
+                                                                   topic=topic)
 
         resource_url = 'volume/connectors'
         return self._get_volume_connectors_collection(

@@ -57,6 +57,9 @@ opts = [
                default=300,
                deprecated_group='agent', deprecated_name='heartbeat_timeout',
                help=_('Maximum interval (in seconds) for agent heartbeats.')),
+    cfg.BoolOpt('enable_data_volume_manage',
+                default=False,
+                help=_('Config ironic volume management')),
 ]
 
 opt_group = cfg.OptGroup(name='api',

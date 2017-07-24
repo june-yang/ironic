@@ -937,3 +937,17 @@ class ConductorAPI(object):
         """
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.38')
         return cctxt.call(context, 'vif_list', node_id=node_id)
+
+    def cache_node_volume_connector(self, context, node_id, topic=None):
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
+        return cctxt.call(context, 'do_node_cache_volume_connector', node_id=node_id)
+
+    def attach_volume(self, context, node_id, volume_id, connection_info, topic=None):
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
+        return cctxt.call(context, 'do_node_attach_volume', node_id=node_id,
+                          volume_id=volume_id, connection_info=connection_info)
+
+    def detach_volume(self, context, node_id, volume_id, connection_info, topic=None):
+        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
+        return cctxt.call(context, 'do_node_detach_volume', node_id=node_id,
+                          volume_id=volume_id, connection_info=connection_info)

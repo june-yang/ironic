@@ -22,6 +22,7 @@ from ironic.drivers.modules import ipmitool
 from ironic.drivers.modules import iscsi_deploy
 from ironic.drivers.modules import noop
 from ironic.drivers.modules import pxe
+from ironic.drivers.modules.storage import agent
 
 
 class IPMIHardware(generic.GenericHardware):
@@ -110,6 +111,7 @@ class AgentAndIPMIToolDriver(base.BaseDriver):
         self.raid = agent.AgentRAID()
         self.inspect = inspector.Inspector.create_if_enabled(
             'AgentAndIPMIToolDriver')
+        self.storage = agent.AgentStorage()
 
 
 class AgentAndIPMIToolAndSocatDriver(AgentAndIPMIToolDriver):

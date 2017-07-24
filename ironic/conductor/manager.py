@@ -601,6 +601,66 @@ class ConductorManager(base_manager.BaseConductorManager):
                     action=event, node=task.node.uuid,
                     state=task.node.provision_state)
 
+    @METRICS.timer('ConductorManager.do_node_cache_volume_connector')
+    @messaging.expected_exceptions(exception.NoFreeConductorWorker)
+    def do_node_cache_volume_connector(self, context, node_id):
+        LOG.debug("RPC do_node_data_volume_connection called for node %s.", node_id)
+
+        with task_manager.acquire(context, node_id, shared=False,
+                                  purpose='node data volume attach') as task:
+            connection_info = task.storage.get_volume_connector(task)
+            if not connection_info:
+                return
+
+            db_connections = task.volume_connectors
+            if 'iqn' in connection_info['initiator']:
+                target_volume_connections = [tvc for tvc in db_connections
+                                             if tvc.type == 'iqn']
+                if not target_volume_connections or not len(target_volume_connections):
+                    new_volume_connector = objects.VolumeConnector(context,
+                                                                   {'node_id': task.node.id,
+                                                                    'type': 'iqn',
+                                                                    'connector_id': connection_info['initiator']})
+                    new_volume_connector.create()
+
+            if 'wwpns' in connection_info:
+                target_volume_connections = [tvc for tvc in db_connections
+                                             if tvc.type == 'wwpn']
+                if not target_volume_connections or not len(target_volume_connections):
+                    new_volume_connector = objects.VolumeConnector(context,
+                                                                   {'node_id': task.node.id,
+                                                                    'type': 'wwpn',
+                                                                    'connector_id': connection_info['wwpns']})
+                    new_volume_connector.create()
+
+            if 'wwnns' in connection_info:
+                target_volume_connections = [tvc for tvc in db_connections
+                                             if tvc.type == 'wwnn']
+                if not target_volume_connections or not len(target_volume_connections):
+                    new_volume_connector = objects.VolumeConnector(context,
+                                                                   {'node_id': task.node.id,
+                                                                    'type': 'wwnns',
+                                                                    'connector_id': connection_info['wwnns']})
+                    new_volume_connector.create()
+
+    @METRICS.timer('ConductorManager.do_node_attach_volume')
+    @messaging.expected_exceptions(exception.NoFreeConductorWorker)
+    def do_node_attach_volume(self, context, node_id, volume_id, connection_info):
+        LOG.debug("RPC attach_volume called for node %s.", node_id)
+
+        with task_manager.acquire(context, node_id, shared=False,
+                                  purpose='node data volume attach') as task:
+            task.storage.attach_data_volume(task, volume_id, connection_info)
+
+    @METRICS.timer('ConductorManager.do_node_attach_volume')
+    @messaging.expected_exceptions(exception.NoFreeConductorWorker)
+    def do_node_detach_volume(self, context, node_id, volume_id, connection_info):
+        LOG.debug("RPC detach_volume called for node %s.", node_id)
+
+        with task_manager.acquire(context, node_id, shared=False,
+                                  purpose='node data volume detach') as task:
+            task.storage.detach_data_volume(task, volume_id, connection_info)
+
     @METRICS.timer('ConductorManager.do_node_tear_down')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
                                    exception.NodeLocked,

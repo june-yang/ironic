@@ -35,6 +35,7 @@ from ironic.api.controllers.v1 import portgroup
 from ironic.api.controllers.v1 import types
 from ironic.api.controllers.v1 import utils as api_utils
 from ironic.api.controllers.v1 import versions
+from ironic.api.controllers.v1 import volume
 from ironic.api import expose
 from ironic.common import exception
 from ironic.common.i18n import _
@@ -1247,6 +1248,7 @@ class NodesController(rest.RestController):
         'ports': port.PortsController,
         'portgroups': portgroup.PortgroupsController,
         'vifs': NodeVIFController,
+        'volume': volume.VolumeController,
     }
 
     @pecan.expose()
