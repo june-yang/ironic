@@ -23,6 +23,7 @@ from ironic.api.controllers import link
 from ironic.api.controllers.v1 import utils as api_utils
 from ironic.api.controllers.v1 import volume_connector
 from ironic.api.controllers.v1 import volume_target
+from ironic.api.controllers.v1 import types
 from ironic.api import expose
 from ironic.common import exception
 from ironic.common import policy
@@ -79,7 +80,7 @@ class VolumeController(rest.RestController):
     """REST controller for volume root"""
 
     _custom_actions = {
-        'attach': ['POST'],
+        'attach': ['PUT'],
         'detach': ['DELETE'],
     }
 
@@ -102,29 +103,31 @@ class VolumeController(rest.RestController):
 
         return Volume.convert(self.parent_node_ident)
 
-    @expose.expose(Volume)
-    def attach(self, volume_id, connector_uuid, node_id=None):
+    @expose.expose(Volume, types.uuid, types.uuid, wsme.types.text)
+    def attach(self, volume_id, node_id, connector_info):
         cdict = pecan.request.context.to_policy_values()
         policy.authorize('baremetal:volume:attach_volume', cdict, cdict)
 
-        rpc_node = api_utils.get_rpc_node(node_ident)
+        rpc_node = api_utils.get_rpc_node(node_id)
         topic = pecan.request.rpcapi.get_topic_for(rpc_node)
         return pecan.request.rpcapi.attach_volume(pecan.request.context,
                                                   volume_id,
-                                                  connector_uuid,
                                                   node_id,
+                                                  connector_info,
                                                   topic)
 
-    @expose.expose(Volume)
-    def detach(self, volume_id, node_id=None):
+    @expose.expose(Volume, types.uuid, types.uuid, wsme.types.text)
+    def detach(self, volume_id, node_id, connector_info):
         cdict = pecan.request.context.to_policy_values()
         policy.authorize('baremetal:volume:detach_volume', cdict, cdict)
 
-        rpc_node = api_utils.get_rpc_node(node_ident)
+        rpc_node = api_utils.get_rpc_node(node_id)
         topic = pecan.request.rpcapi.get_topic_for(rpc_node)
         return pecan.request.rpcapi.detach_volume(pecan.request.context,
                                                   volume_id,
-                                                  node_id)
+                                                  node_id,
+                                                  connector_info,
+                                                  topic)
 
     @pecan.expose()
     def _lookup(self, subres, *remainder):

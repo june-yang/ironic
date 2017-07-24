@@ -951,28 +951,29 @@ class ConductorAPI(object):
         cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
         return cctxt.call(context, 'do_node_detach_volume', node_id=node_id,
                           volume_id=volume_id, connection_info=connection_info)
-    def attach_volume(self, context, volume_id, connector_uuid, node_id=None, topic=None):
-        """ Attach a volume to a node
-
-        :param context: request context.
-        :param volume_id: volume ID or UUID.
-        :param connector_uuid: connector ID or UUID.
-        :param node_id: node ID or UUID.
-        :returns: List of VIF dictionaries, each dictionary will have an
-             'id' entry with the ID of the VIF. 
-        """
-        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
-        return cctxt.call(context, 'attach_volume', volume_id=volume_id ,
-                          connector_uuid=connector_uuid, node_id=node_id)
-
-    def detach_volume(self, context, volume_id, node_id=None):
-        """ Detach a volume to a node
-
-        :param context: request context.
-        :param volume_id: volume ID or UUID.
-        :param node_id: node ID or UUID.
-        :returns: List of VIF dictionaries, each dictionary will have an
-             'id' entry with the ID of the VIF. 
-        """
-        cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
-        return cctxt.call(context, 'detach_volume', volume_id=volume_id, node_id=node_id)
+        
+    # def attach_volume(self, context, volume_id, connector_uuid, node_id=None, topic=None):
+    #     """ Attach a volume to a node
+    #
+    #     :param context: request context.
+    #     :param volume_id: volume ID or UUID.
+    #     :param connector_uuid: connector ID or UUID.
+    #     :param node_id: node ID or UUID.
+    #     :returns: List of VIF dictionaries, each dictionary will have an
+    #          'id' entry with the ID of the VIF.
+    #     """
+    #     cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
+    #     return cctxt.call(context, 'attach_volume', volume_id=volume_id ,
+    #                       connector_uuid=connector_uuid, node_id=node_id)
+    #
+    # def detach_volume(self, context, volume_id, node_id=None):
+    #     """ Detach a volume to a node
+    #
+    #     :param context: request context.
+    #     :param volume_id: volume ID or UUID.
+    #     :param node_id: node ID or UUID.
+    #     :returns: List of VIF dictionaries, each dictionary will have an
+    #          'id' entry with the ID of the VIF.
+    #     """
+    #     cctxt = self.client.prepare(topic=topic or self.topic, version='1.39')
+    #     return cctxt.call(context, 'detach_volume', volume_id=volume_id, node_id=node_id)

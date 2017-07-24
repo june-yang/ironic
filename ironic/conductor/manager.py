@@ -652,6 +652,9 @@ class ConductorManager(base_manager.BaseConductorManager):
                                   purpose='node data volume attach') as task:
             task.storage.attach_data_volume(task, volume_id, connection_info)
 
+            # create a volume target
+            # TODO
+
     @METRICS.timer('ConductorManager.do_node_attach_volume')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker)
     def do_node_detach_volume(self, context, node_id, volume_id, connection_info):
@@ -660,6 +663,8 @@ class ConductorManager(base_manager.BaseConductorManager):
         with task_manager.acquire(context, node_id, shared=False,
                                   purpose='node data volume detach') as task:
             task.storage.detach_data_volume(task, volume_id, connection_info)
+            # remove a volume target
+            # TODO
 
     @METRICS.timer('ConductorManager.do_node_tear_down')
     @messaging.expected_exceptions(exception.NoFreeConductorWorker,
