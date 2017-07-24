@@ -78,6 +78,11 @@ class Volume(base.APIBase):
 class VolumeController(rest.RestController):
     """REST controller for volume root"""
 
+    _custom_actions = {
+        'attach': ['POST'],
+        'detach': ['DELETE'],
+    }
+
     _subcontroller_map = {
         'connectors': volume_connector.VolumeConnectorsController,
         'targets': volume_target.VolumeTargetsController
@@ -96,6 +101,31 @@ class VolumeController(rest.RestController):
         policy.authorize('baremetal:volume:get', cdict, cdict)
 
         return Volume.convert(self.parent_node_ident)
+
+    @expose.expose(Volume)
+    #def attach(self, volume_id, connector_uuid, node_id=None):
+    def attach(self):
+        cdict = pecan.request.context.to_policy_values()
+        policy.authorize('baremetal:volume:attach_volume', cdict, cdict)
+
+        rpc_node = api_utils.get_rpc_node(node_ident)
+        topic = pecan.request.rpcapi.get_topic_for(rpc_node)
+        return pecan.request.rpcapi.attach_volume(pecan.request.context,
+                                                  volume_id,
+                                                  connector_uuid,
+                                                  node_id,
+                                                  topic)
+
+    @expose.expose(Volume)
+    def detach(self, volume_id, node_id=None):
+        cdict = pecan.request.context.to_policy_values()
+        policy.authorize('baremetal:volume:detach_volume', cdict, cdict)
+
+        rpc_node = api_utils.get_rpc_node(node_ident)
+        topic = pecan.request.rpcapi.get_topic_for(rpc_node)
+        return pecan.request.rpcapi.detach_volume(pecan.request.context,
+                                                  volume_id,
+                                                  node_id)
 
     @pecan.expose()
     def _lookup(self, subres, *remainder):

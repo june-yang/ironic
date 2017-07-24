@@ -2680,6 +2680,31 @@ class ConductorManager(base_manager.BaseConductorManager):
         return objinst.obj_to_primitive(target_version=target,
                                         version_manifest=object_versions)
 
+    @METRICS.timer('ConductorManager.attach_volume')
+    def attach_volume(self, context, volume_id, connector_id, node_id=None):
+        """ Attach a volume to a node
+
+        :param context: request context.
+        :param volume_id: volume ID or UUID.
+        :param connector_uuid: connector ID or UUID.
+        :param node_id: node ID or UUID.
+        :returns: List of VIF dictionaries, each dictionary will have an
+             'id' entry with the ID of the VIF. 
+        """
+        return ""
+
+    @METRICS.timer('ConductorManager.detach_volume')
+    def detach_volume(self, context, volume_id, node_id=None):
+        """ Detach a volume to a node
+
+        :param context: request context.
+        :param volume_id: volume ID or UUID.
+        :param node_id: node ID or UUID.
+        :returns: List of VIF dictionaries, each dictionary will have an
+             'id' entry with the ID of the VIF. 
+        """
+        return ""
+
 
 @METRICS.timer('get_vendor_passthru_metadata')
 def get_vendor_passthru_metadata(route_dict):
