@@ -613,10 +613,24 @@ class ConductorManager(base_manager.BaseConductorManager):
                 return
 
             db_connections = task.volume_connectors
-            if 'iqn' in connection_info['initiator']:
+            if 'ip' in connection_info:
+                target_volume_connections = [tvc for tvc in db_connections
+                                             if tvc.type == 'ip']
+                if not target_volume_connections or not len(target_volume_connections):
+                    if not isinstance(connection_info['ip'], list):
+                        connection_info['ip'] = [connection_info['ip']]
+                    new_volume_connector = objects.VolumeConnector(context,
+                                                                   {'node_id': task.node.id,
+                                                                    'type': 'ip',
+                                                                    'connector_id': connection_info['ip']})
+                    new_volume_connector.create()
+
+            if 'initiator' in connection_info:
                 target_volume_connections = [tvc for tvc in db_connections
                                              if tvc.type == 'iqn']
                 if not target_volume_connections or not len(target_volume_connections):
+                    if not isinstance(connection_info['initiator'], list):
+                        connection_info['initiator'] = [connection_info['initiator']]
                     new_volume_connector = objects.VolumeConnector(context,
                                                                    {'node_id': task.node.id,
                                                                     'type': 'iqn',
